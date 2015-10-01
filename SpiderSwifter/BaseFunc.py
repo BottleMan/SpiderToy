@@ -6,6 +6,8 @@ from pyquery import PyQuery as pq
 
 __author__ = 'Bottle'
 
+base_url = "http://swifter.tips/"
+
 
 # 获取模板页
 def get_page(url):
@@ -37,32 +39,24 @@ def get_latest_post(_the_page):
 
 
 # 获取「文章列表」
-def get_post_index(_the_page):
-    v_source = pq(_the_page)
+def get_post_index(_url, _pre_arr):
+    v_source = pq(url=_url)
 
-    # TODO 递归获取 older post 内容
+    # 向后翻页
+    older_post_a = v_source.find(".post-navigation .older-posts")
+    if len(older_post_a) > 0:
+        _pre_arr += get_post_index(base_url + older_post_a.eq(0).attr("href"), _pre_arr)
 
-    print(u"获取「文章列表」")
-
-    # 翻页
-
-    # 获取本页内容
+    # 获取本页文章列表
     post_indexes = v_source.find(".post-list a")
-    currArr = []
+    curr_arr = []
     for i in post_indexes:
         post_index = post_indexes(i)
         title = post_index.find("h4").text()
         url = post_index.attr("href")
-        currArr.append((title, url))
+        curr_arr.append((title, url))
 
-    print(currArr)
-    print(u"「文章列表」获取完成")
-
-
-
-    #post_navigation = v_source.find(".post-navigation")
-
-
+    return curr_arr + _pre_arr
 
 
 # 获取文件结构元组

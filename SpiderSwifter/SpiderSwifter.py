@@ -18,7 +18,10 @@ the_page = get_page(url)
 
 #latest_post = get_latest_post(the_page)
 
-post_index = get_post_index(the_page)
+post_indexes = get_post_index(url, [])
+
+for i in range(0, len(post_indexes)):
+    print(post_indexes[i][0], " ", post_indexes[i][1])
 
 exit()
 
