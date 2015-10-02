@@ -1,104 +1,79 @@
 # coding=utf-8
 
-import urllib2
 import re
-from pyquery import PyQuery as pq
+import HTMLParser
+from pyquery import PyQuery
 
 __author__ = 'Bottle'
 
 base_url = "http://swifter.tips/"
 
 
-# 获取模板页
-def get_page(url):
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.1.6) Gecko/20091201 Firefox/3.5.6'
-    }
-
-    req = urllib2.Request(
-        url=url,
-        headers=headers
-    )
-
-    response = urllib2.urlopen(req)
-    return response.read()
-
-
-# 获取「本周 Tip」
-def get_latest_post(_the_page):
-
-    print u"获取「本周 Tip」"
-
-    v_source = pq(_the_page)
-    latest_post = v_source.find("#latest-post").text()
-
-    print(latest_post)
-    print u"「本周 Tip」 获取完成"
-
-    return latest_post
-
-
 # 获取「文章列表」
 def get_post_index(_url, _pre_arr):
-    v_source = pq(url=_url)
+    v_source = PyQuery(url=_url)
 
     # 向后翻页
     older_post_a = v_source.find(".post-navigation .older-posts")
     if len(older_post_a) > 0:
-        _pre_arr += get_post_index(base_url + older_post_a.eq(0).attr("href"), _pre_arr)
+        _pre_arr = get_post_index(base_url + older_post_a.eq(0).attr("href"), _pre_arr) + _pre_arr
 
     # 获取本页文章列表
     post_indexes = v_source.find(".post-list a")
     curr_arr = []
     for i in post_indexes:
-        post_index = post_indexes(i)
-        title = post_index.find("h4").text()
-        url = post_index.attr("href")
+        title = post_indexes(i).find("h4").text()
+        url = post_indexes(i).attr("href")
         curr_arr.append((title, url))
 
     return curr_arr + _pre_arr
 
 
-# 获取文件结构元组
-def get_tuple(item):
-    (_foler_name, _file_name) = re.findall("&file=(.*?)/(.*)", item)[0]
-    _url = "http://tool.sufeinet.com" + item
+# 获取「每周 Tip」
+def get_post(_url):
+    v_source = PyQuery(url=(base_url+_url))
+    paras = v_source.find(".post-content").children()
+    article = ""
+    for i in paras:
+        para_html = paras(i).html(method='html')
 
-    return (_url, _foler_name, _file_name)
+        # 【0】替换 code
+        if paras(i).is_("pre"):
+            link = re.compile("<code.*?>([\s\S]*?)</code>")
+            para_html = "```\n" + re.sub(link, r'\1', para_html) + "```"
 
+        # 替换 inline code
+        link = re.compile("<code>([\s\S]*?)</code>")
+        para_html = re.sub(link, r'`\1`', para_html)
 
-# 获取桌面路径
-def get_desktop():
-    import os
+        # 替换 strong
+        link = re.compile("<strong.*?>([\s\S]*?)</strong>")
+        para_html = re.sub(link, r'**\1**', para_html)
 
-    return os.path.expanduser(r"~/Desktop/")
+        # 替换 a
+        link = re.compile("<a.*? href=\"(.*?)\">([\s\S]*?)</a>")
+        para_html = re.sub(link, r'[\2](\1)', para_html)
 
-# 创建本地目录
-def mkdir(path):
-    # 引入模块
-    import os
+        # 替换 p
+        link = re.compile("<p.*?>([\s\S]*?)</p>")
+        para_html = re.sub(link, r'\1', para_html)
 
-    # 去除首位空格
-    path = path.strip()
-    # 去除尾部 \ 符号
-    path = path.rstrip("\\")
+        # 替换 li
+        link = re.compile("<li>([\s\S]*?)</li>")
+        para_html = re.sub(link, r'* \1', para_html)
 
-    # 判断路径是否存在
-    # 存在     True
-    # 不存在   False
-    isExists = os.path.exists(path)
+        # 替换 HTML 转义字符
+        html_parser = HTMLParser.HTMLParser()
+        para_html = html_parser.unescape(para_html)
 
-    # 判断结果
-    if not isExists:
-        # 如果不存在则创建目录
-        print path + u' 创建成功'
-        # 创建目录操作函数
-        os.makedirs(path)
-        return True
-    else:
-        # 如果目录存在则不创建，并提示目录已存在
-        print path + u' 目录已存在'
-        return False
+        # 添加 blockquote
+        if paras(i).is_("blockquote"):
+            para_html = ">" + para_html
+
+        # 添加到 article
+        article += para_html + "\n\n"
+
+    return article
 
 
 # 做一些装逼的事
