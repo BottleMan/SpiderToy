@@ -2,11 +2,15 @@
 
 import re
 import HTMLParser
+import time
 from pyquery import PyQuery
+from SqliteDbHelper import *
 
 __author__ = 'Bottle'
 
 base_url = "http://swifter.tips/"
+base_insert_sql = "INSERT INTO Swifter (Title, Url, Content, PostDate, SyncDate, IsValid) VALUES (?,?,?,?,?,1)"
+base_exist_sql = "SELECT * FROM Swifter WHERe Title=? AND Url=?"
 
 
 # 获取「文章列表」
@@ -76,29 +80,15 @@ def get_post(_url):
     return article
 
 
-# 做一些装逼的事
-def make_some_shit():
-    import time
+# 执行插入新的数据
+def do_insert(title, url, article):
+    cur_time = time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(time.time()))
+    param = (title, url, article, "", cur_time)
+    sqlite_execute(base_insert_sql, param)
 
-    print '    ______  __   ____  ____  ______________    ______'
-    time.sleep(0.5)
-    print '   / __ ) \/ /  / __ )/ __ \/_  __/_  __/ /   / ____/'
-    time.sleep(0.5)
-    print '  / __  |\  /  / __  / / / / / /   / / / /   / __/   '
-    time.sleep(0.5)
-    print ' / /_/ / / /  / /_/ / /_/ / / /   / / / /___/ /___   '
-    time.sleep(0.5)
-    print '/_____/ /_/  /_____/\____/ /_/   /_/ /_____/_____/   '
-    time.sleep(0.5)
-    print '                                                     '
-    print '   ___   ____ _________  ____  ______  ___   ____ '
-    time.sleep(0.5)
-    print '  |__ \ / __ <  / ____/ / __ \/ ____/ |__ \ ( __ )'
-    time.sleep(0.5)
-    print '  __/ // / / / /___ \  / / / /___ \   __/ // __  |'
-    time.sleep(0.5)
-    print ' / __// /_/ / /___/ /_/ /_/ /___/ /_ / __// /_/ / '
-    time.sleep(0.5)
-    print '/____/\____/_/_____/(_)____/_____/(_)____/\____/  '
-    time.sleep(0.5)
-    print '                                                  '
+
+# 判断数据库中是否已经存在
+def is_exist(title, url):
+    param = (title, url)
+    return sqlite_is_exist(base_exist_sql, param)
+
