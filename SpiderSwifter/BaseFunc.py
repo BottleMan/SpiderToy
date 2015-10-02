@@ -3,8 +3,9 @@
 import re
 import HTMLParser
 import time
+
 from pyquery import PyQuery
-from SqliteDbHelper import *
+from Database.SqliteDbHelper import *
 
 __author__ = 'Bottle'
 
